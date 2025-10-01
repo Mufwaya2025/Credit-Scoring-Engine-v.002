@@ -9,19 +9,19 @@ export interface ApplicantField {
   id: string
   fieldName: string
   displayName: string
-  description?: string
+  description?: string | null
   fieldType: 'text' | 'number' | 'select' | 'checkbox' | 'date' | 'radio'
   category: 'personal' | 'financial' | 'employment' | 'credit'
   isActive: boolean
   isRequired: boolean
-  validationRules?: string
-  options?: string
-  defaultValue?: string
-  placeholder?: string
-  helpText?: string
+  validationRules?: string | null
+  options?: string | null
+  defaultValue?: string | null
+  placeholder?: string | null
+  helpText?: string | null
   order: number
-  scoringWeight?: number
-  scoringConfig?: string
+  scoringWeight?: number | null
+  scoringConfig?: string | null
   createdAt: Date
   updatedAt: Date
 }
@@ -29,18 +29,18 @@ export interface ApplicantField {
 export interface CreateApplicantFieldInput {
   fieldName: string
   displayName: string
-  description?: string
+  description?: string | null
   fieldType: ApplicantField['fieldType']
   category?: ApplicantField['category']
   isRequired?: boolean
-  validationRules?: string
-  options?: string
-  defaultValue?: string
-  placeholder?: string
-  helpText?: string
+  validationRules?: string | null
+  options?: string | null
+  defaultValue?: string | null
+  placeholder?: string | null
+  helpText?: string | null
   order?: number
-  scoringWeight?: number
-  scoringConfig?: string
+  scoringWeight?: number | null
+  scoringConfig?: string | null
 }
 
 export interface UpdateApplicantFieldInput extends Partial<CreateApplicantFieldInput> {

@@ -120,10 +120,7 @@ export default function PredictionPage() {
   }, [])
 
   const handleFieldChange = (fieldName: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }))
+    updateField(fieldName, value)
   }
 
   const handlePredict = async () => {

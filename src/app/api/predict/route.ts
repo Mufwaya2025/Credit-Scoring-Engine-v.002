@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { createHash } from 'crypto'
 import { executeRules } from '@/app/api/rules/route'
 import { configurableScoringEngine } from '@/lib/configurable-scoring'
-import { scoreRangeService } from '@/lib/score-range'
+import { ScoreRangeService } from '@/lib/score-range'
 
 // Dynamic schema that accepts any string keys with various value types
 const DynamicApplicantDataSchema = z.record(z.union([
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     const initialArcScore = scoringResult.totalScore
     
     // Get score interpretation using score range service
-    const scoreInterpretation = await scoreRangeService.getScoreInterpretation(initialArcScore)
+    const scoreInterpretation = await ScoreRangeService.getScoreInterpretation(initialArcScore)
     
     // Execute business rules
     const rulesResult = await executeRules(validatedData)
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     if (rulesResult.finalScore) {
       finalArcScore = Math.max(300, Math.min(850, finalArcScore + rulesResult.finalScore))
       // Re-interpret the adjusted score
-      const adjustedInterpretation = await scoreRangeService.getScoreInterpretation(finalArcScore)
+      const adjustedInterpretation = await ScoreRangeService.getScoreInterpretation(finalArcScore)
       finalApprovalStatus = adjustedInterpretation.approvalStatus
       finalRiskLevel = adjustedInterpretation.riskLevel
     }
@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
+        { error: 'Invalid input data', details: error.issues },
         { status: 400 }
       )
     }

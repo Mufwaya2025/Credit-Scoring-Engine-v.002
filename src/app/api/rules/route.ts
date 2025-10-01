@@ -25,18 +25,19 @@ interface RuleCondition {
 }
 
 interface ApplicantData {
-  age: number
-  annualIncome: number
-  loanAmount: number
-  creditHistoryLength: number
-  debtToIncomeRatio: number
-  employmentStatus: string
-  educationLevel: string
-  monthlyExpenses: number
-  existingLoanAmount: number
-  creditUtilization: number
-  latePayments12m: number
-  recentInquiries: number
+  age?: number
+  annualIncome?: number
+  loanAmount?: number
+  creditHistoryLength?: number
+  debtToIncomeRatio?: number
+  employmentStatus?: string
+  educationLevel?: string
+  monthlyExpenses?: number
+  existingLoanAmount?: number
+  creditUtilization?: number
+  latePayments12m?: number
+  recentInquiries?: number
+  [key: string]: any
 }
 
 interface RuleExecutionResult {
@@ -96,7 +97,7 @@ function evaluateCondition(condition: RuleCondition, applicantData: ApplicantDat
 }
 
 // Helper function to execute rule action
-function executeAction(action: string, actionValue: string | undefined): any {
+function executeAction(action: string, actionValue: string | null | undefined): any {
   if (!actionValue) return { success: true }
   
   try {
@@ -177,9 +178,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(rule, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log('Zod validation error:', error.errors);
+      console.log('Zod validation error:', error.issues);
       return NextResponse.json(
-        { error: 'Invalid input data', details: error.errors },
+        { error: 'Invalid input data', details: error.issues },
         { status: 400 }
       )
     }

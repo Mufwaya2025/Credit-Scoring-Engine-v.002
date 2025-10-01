@@ -91,12 +91,12 @@ export async function PUT(
     return NextResponse.json(rule)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log("Zod validation error:", error.errors);
+      console.log("Zod validation error:", error.issues);
       return NextResponse.json(
         { 
           error: 'Invalid input data', 
-          details: error.errors,
-          message: error.errors ? error.errors.map(e => e.message).join(', ') : 'Validation error occurred'
+          details: error.issues,
+          message: error.issues ? error.issues.map(e => e.message).join(', ') : 'Validation error occurred'
         },
         { status: 400 }
       )

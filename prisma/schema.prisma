@@ -47,6 +47,8 @@ model User {
   role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
+  posts         Post[]
+  predictions   Prediction[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -59,6 +61,196 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// Credit scoring models
+model Prediction {
+  id              String   @id @default(cuid())
+  timestamp       DateTime @default(now())
+  applicantHash   String
+  creditScore     Int
+  approvalStatus  String
+  riskLevel       String
+  modelVersion    String   @default("1.0")
+  userSession     String?
+  confidence      Float?
+  processingTime  Int?
+  
+  // Applicant data (JSON for flexibility)
+  applicantData   String   // JSON string
+  
+  // Relations
+  userId          String?
+  user            User?    @relation(fields: [userId], references: [id])
+  ruleExecutions  RuleExecution[]
+  
+  @@map("predictions")
+}
+
+model Rule {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  type            String   // "eligibility", "risk", "pricing", "limit"
+  category        String   // "credit_score", "income", "debt", "employment", etc.
+  condition       String   // JSON string representing the rule condition
+  action          String   // "approve", "reject", "flag", "adjust_score", "adjust_limit"
+  actionValue     String?  // JSON string for action parameters
+  priority        Int      @default(1) // Higher number = higher priority
+  isActive        Boolean  @default(true)
+  weight          Float    @default(1.0) // Rule weight in decision making
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  ruleExecutions  RuleExecution[]
+  
+  @@map("rules")
+}
+
+model RuleExecution {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  predictionId String
+  ruleId      String
+  triggered   Boolean
+  result      String   // JSON string of execution result
+  finalScore  Int?
+  finalStatus String?
+  
+  // Relations
+  prediction  Prediction @relation(fields: [predictionId], references: [id])
+  rule        Rule        @relation(fields: [ruleId], references: [id])
+  
+  @@map("rule_executions")
+}
+
+model ScoringConfig {
+  id              String   @id @default(cuid())
+  factor          String   @unique  // "age", "income", "debtToIncome", etc.
+  name            String   // Human-readable name
+  description     String?  // Factor description
+  maxPoints       Int      // Maximum points for this factor
+  weight          Float    @default(1.0) // Relative weight in overall scoring
+  thresholds      String   // JSON string for threshold values and ranges
+  category        String   @default("general") // "demographic", "financial", "credit", "employment"
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Configuration metadata
+  configType      String   @default("static") // "static", "dynamic", "calculated"
+  calculationType String   @default("linear") // "linear", "threshold", "categorical", "optimal"
+  minValue       Float?   // Minimum valid value
+  maxValue       Float?   // Maximum valid value
+  optimalValue   Float?   // Optimal value for optimal-based calculations
+  
+  @@map("scoring_config")
+}
+
+model ScoreRange {
+  id              String   @id @default(cuid())
+  name            String   // "Excellent", "Good", "Fair", "Poor"
+  description     String?  // Detailed description of this score range
+  minScore        Int      // Minimum score for this range
+  maxScore        Int      // Maximum score for this range (null for unbounded)
+  color           String?  // UI color code (e.g., "#10B981", "#F59E0B", "#EF4444")
+  approvalStatus  String?  // "Approved", "Approved with Conditions", "Rejected"
+  riskLevel       String?  // "Low Risk", "Medium Risk", "High Risk"
+  interestRateAdjustment Float? @default(0.0) // Interest rate adjustment in percentage points
+  loanLimitAdjustment   Float? @default(0.0) // Loan limit adjustment multiplier
+  isActive        Boolean  @default(true)
+  priority        Int      @default(1) // For ordering and overlap resolution
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("score_ranges")
+}
+
+model ApplicantField {
+  id              String   @id @default(cuid())
+  fieldName       String   @unique  // "age", "income", "employmentStatus", etc.
+  displayName     String   // Human-readable display name
+  description     String?  // Field description
+  fieldType       String   // "text", "number", "select", "checkbox", "date", "radio"
+  category        String   @default("personal") // "personal", "financial", "employment", "credit"
+  isActive        Boolean  @default(true)
+  isRequired      Boolean  @default(false)
+  validationRules String?  // JSON string for validation rules
+  options         String?  // JSON string for select/radio options
+  defaultValue    String?  // Default value for the field
+  placeholder     String?  // Placeholder text for input fields
+  helpText        String?  // Help text for users
+  order           Int      @default(0) // Display order
+  scoringWeight   Float?   @default(0.0) // Weight in scoring calculation
+  scoringConfig   String?  // JSON string for scoring configuration
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("applicant_fields")
+}
+
+// Additional models for advanced features
+model ModelPerformance {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  accuracy      Float
+  precision     Float
+  recall        Float
+  f1Score       Float
+  aucScore      Float
+  modelVersion  String
+  samples       Int
+  
+  @@map("model_performance")
+}
+
+model ABTest {
+  id            String   @id @default(cuid())
+  name          String
+  modelA        String
+  modelB        String
+  trafficSplitA Int      @default(50)
+  trafficSplitB Int      @default(50)
+  status        String   @default("active") // active, paused, completed
+  startDate     DateTime @default(now())
+  endDate       DateTime?
+  
+  // Test results
+  totalPredictions Int @default(0)
+  modelAPredictions Int @default(0)
+  modelBPredictions Int @default(0)
+  modelAAccuracy    Float?
+  modelBAccuracy    Float?
+  
+  @@map("ab_tests")
+}
+
+model SystemConfig {
+  id                    String   @id @default(cuid())
+  key                   String   @unique
+  value                 String   // JSON string
+  description           String?
+  lastModified          DateTime @default(now())
+  lastModifiedBy        String?
+  
+  @@map("system_config")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  timestamp   DateTime @default(now())
+  action      String
+  entityType  String?
+  entityId    String?
+  changes     String?  // JSON string
+  userId      String?
+  userSession String?
+  ipAddress   String?
+  userAgent   String?
+  
+  @@map("audit_logs")
+}
+
+// Blog/Content model (for documentation and articles)
 model Post {
   id        String   @id @default(cuid())
   title     String
