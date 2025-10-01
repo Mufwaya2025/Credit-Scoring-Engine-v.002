@@ -59,7 +59,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { FieldManagementDashboard } from '@/components/field-management-dashboard'
-// import { CalculatedFieldsPanel } from '@/components/calculated-fields-panel'
+import { CalculatedFieldsPanel } from '@/components/calculated-fields-panel'
 
 const fieldFormSchema = z.object({
   fieldName: z.string().min(1, 'Field name is required').regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, 'Field name must be a valid identifier'),
@@ -624,6 +624,7 @@ export default function ApplicantFieldsPage() {
                   ))}
                 </div>
               </TabsContent>
+            ))}
 
             {/* Scoring Fields Tab */}
             <TabsContent value="scoring" className="space-y-4">
@@ -715,11 +716,12 @@ export default function ApplicantFieldsPage() {
               </div>
             </TabsContent>
             </Tabs>
+            </TabsContent>
 
             {/* Calculated Fields Tab */}
-            {/* <TabsContent value="calculated" className="space-y-4">
-              <CalculatedFieldsPanel />
-            </TabsContent> */}
+            <TabsContent value="calculated" className="space-y-4">
+            <CalculatedFieldsPanel />
+          </TabsContent>
           </Tabs>
         )}
 
