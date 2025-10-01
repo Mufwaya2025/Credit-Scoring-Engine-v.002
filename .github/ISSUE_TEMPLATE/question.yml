@@ -1,0 +1,119 @@
+---
+name: Question
+description: Ask a question about the Credit Scoring Engine
+title: "[QUESTION] "
+labels: ["question"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about the Credit Scoring Engine? Please provide as much detail as possible to help us give you the best answer.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Question Summary
+      description: A brief summary of your question
+      placeholder: e.g., How do I add a new field type to the scoring system?
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Question Details
+      description: Provide detailed information about your question
+      placeholder: I'm trying to add a new field type for employment history but I'm not sure how to integrate it with the scoring engine...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What category does your question relate to?
+      options:
+        - Installation & Setup
+        - Configuration
+        - API Usage
+        - Database & Schema
+        - UI Components
+        - Scoring Logic
+        - Deployment
+        - Performance
+        - Security
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_tried
+    attributes:
+      label: What Have You Tried?
+      description: Describe what you've already tried to solve your problem
+      placeholder: |
+        I tried modifying the ApplicantField model and adding a new validation rule, but I'm getting an error when trying to save the field...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What are you trying to achieve?
+      placeholder: I want to create a new field type that can store employment history and contribute to the credit score calculation...
+
+  - type: textarea
+    id: code
+    attributes:
+      label: Relevant Code
+      description: If applicable, share relevant code snippets
+      render: shell
+      placeholder: |
+        // Your code here
+        const newField = {
+          fieldName: 'employmentHistory',
+          fieldType: 'complex',
+          // ...
+        };
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error Messages
+      description: If you're getting errors, please share them
+      render: shell
+      placeholder: |
+        Error: Cannot read property 'validate' of undefined
+        at Object.validateField (app.ts:45:12)
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: What environment are you running this on?
+      placeholder: e.g., Windows 11, Node.js 18.17.0, npm 9.6.7
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: Research Done
+      description: Please confirm what research you've done
+      options:
+        - label: I have read the README.md file
+          required: true
+        - label: I have searched the documentation
+        - label: I have searched existing issues and discussions
+        - label: I have tried to find the answer myself
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Agreement
+      description: Please confirm the following
+      options:
+        - label: I understand this is for questions, not bug reports or feature requests
+          required: true
+        - label: I have provided enough detail for others to help me
+          required: true

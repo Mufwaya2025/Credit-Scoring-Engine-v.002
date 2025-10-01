@@ -1,0 +1,867 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { MainLayout } from "@/components/layout/main-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { 
+  Calculator, 
+  TrendingUp, 
+  Info, 
+  BarChart3, 
+  Target,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle,
+  Database,
+  Type,
+  Function,
+  RefreshCw,
+  Users,
+  GraduationCap
+} from "lucide-react"
+import { 
+  ApplicantData, 
+  CalculationEngine, 
+  fieldDefinitions, 
+  defaultCalculationEngine 
+} from "@/lib/calculation-engine"
+
+export default function OverallScoreExplanation() {
+  const [applicantData, setApplicantData] = useState<ApplicantData>({
+    age: 35,
+    annualIncome: 75000,
+    loanAmount: 25000,
+    creditHistoryLength: 8,
+    monthlyDebtPayments: 1200,
+    totalCreditLimit: 50000,
+    creditCardBalances: 15000,
+    monthlyExpenses: 3500,
+    existingLoanAmount: 10000,
+    latePayments12m: 1,
+    recentInquiries: 2,
+    employmentStatus: "Employed",
+    educationLevel: "Bachelor"
+  })
+  
+  const [calculationEngine] = useState<CalculationEngine>(defaultCalculationEngine)
+  const [overallScore, setOverallScore] = useState<any>(null)
+  const [calculatedData, setCalculatedData] = useState<ApplicantData>({})
+  const [debugInfo, setDebugInfo] = useState<any>({})
+
+  useEffect(() => {
+    recalculateScores()
+  }, [applicantData, calculationEngine])
+
+  const recalculateScores = () => {
+    // Calculate derived fields
+    const calculated = calculationEngine.calculateAllFields(applicantData)
+    setCalculatedData(calculated)
+    
+    // Calculate overall score
+    const score = calculationEngine.calculateOverallScore(applicantData)
+    setOverallScore(score)
+    
+    // Create detailed debug info
+    const debug: any = {}
+    score.details.forEach((detail: any) => {
+      const fieldDef = fieldDefinitions.find(f => f.value === detail.field)
+      debug[detail.field] = {
+        ...detail,
+        category: fieldDef?.category || "unknown",
+        type: fieldDef?.type || "unknown"
+      }
+    })
+    setDebugInfo(debug)
+  }
+
+  const handleFieldChange = (field: string, value: string) => {
+    const fieldDef = fieldDefinitions.find(f => f.value === field)
+    let processedValue: any = value
+    
+    if (fieldDef?.type === "number") {
+      const numValue = parseFloat(value) || 0
+      processedValue = isNaN(numValue) ? 0 : numValue
+    } else if (fieldDef?.type === "string") {
+      processedValue = value
+    }
+    
+    const newData = { ...applicantData, [field]: processedValue }
+    setApplicantData(newData)
+  }
+
+  const getScoreColor = (percentage: number) => {
+    if (percentage {'>='} 80) return "text-green-600"
+    if (percentage {'>='} 60) return "text-orange-600"
+    return "text-red-600"
+  }
+
+  const getNormalizedColor = (score: number) => {
+    if (score {'>='} 0.8) return "text-green-600"
+    if (score {'>='} 0.5) return "text-orange-600"
+    return "text-red-600"
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "number": return <Database className="h-4 w-4" />
+      case "string": return <Type className="h-4 w-4" />
+      case "calculated": return <Function className="h-4 w-4" />
+      default: return <Info className="h-4 w-4" />
+    }
+  }
+
+  const getCategoryColor = (category: string) => {
+    switch (category) {
+      case "base": return "bg-blue-100 text-blue-800"
+      case "derived": return "bg-purple-100 text-purple-800"
+      default: return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Overall Weighted Score Analysis</h1>
+          <p className="text-muted-foreground">
+            How the scoring system handles Numeric, Categorical, and Calculated Fields
+          </p>
+        </div>
+
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Score Overview</TabsTrigger>
+            <TabsTrigger value="field-types">Field Types</TabsTrigger>
+            <TabsTrigger value="calculation">Calculation Process</TabsTrigger>
+            <TabsTrigger value="interactive">Interactive Demo</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Overall Score Display */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Current Overall Weighted Score
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive score including all field types: Numeric, Categorical, and Calculated
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {overallScore ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-4xl font-bold">
+                          <span className={getScoreColor(overallScore.percentage)}>
+                            {overallScore.percentage.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Score: {overallScore.totalScore.toFixed(1)} / {overallScore.maxScore.toFixed(1)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={overallScore.percentage {'>='} 80 ? "default" : "destructive"}>
+                          {overallScore.percentage {'>='} 80 ? "Excellent" : overallScore.percentage {'>='} 60 ? "Good" : "Needs Improvement"}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <Progress value={overallScore.percentage} className="h-4" />
+                    
+                    <div className="grid md:grid-cols-3 gap-4 text-center">
+                      <div className="p-3 border rounded-lg">
+                        <div className="text-lg font-bold text-blue-600">
+                          {overallScore.details.filter((d: any) => debugInfo[d.field]?.type === "number").length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Numeric Fields</div>
+                      </div>
+                      <div className="p-3 border rounded-lg">
+                        <div className="text-lg font-bold text-green-600">
+                          {overallScore.details.filter((d: any) => debugInfo[d.field]?.type === "string").length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Categorical Fields</div>
+                      </div>
+                      <div className="p-3 border rounded-lg">
+                        <div className="text-lg font-bold text-purple-600">
+                          {overallScore.details.filter((d: any) => debugInfo[d.field]?.type === "calculated").length}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Calculated Fields</div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      No score calculated - check field configurations
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Field Contributions by Type */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Field Contributions by Type</CardTitle>
+                <CardDescription>
+                  How different field types contribute to the overall score
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {overallScore ? (
+                  <div className="space-y-6">
+                    {/* Numeric Fields */}
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        Numeric Fields
+                      </h3>
+                      <div className="grid gap-3">
+                        {overallScore.details
+                          .filter((d: any) => debugInfo[d.field]?.type === "number")
+                          .sort((a: any, b: any) => b.weightedScore - a.weightedScore)
+                          .map((detail: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                  <Database className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium">{detail.label}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Value: {detail.value} | Weight: {detail.weight}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold">{detail.weightedScore.toFixed(2)}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {(detail.normalizedScore * 100).toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Categorical Fields */}
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Type className="h-4 w-4" />
+                        Categorical Fields
+                      </h3>
+                      <div className="grid gap-3">
+                        {overallScore.details
+                          .filter((d: any) => debugInfo[d.field]?.type === "string")
+                          .sort((a: any, b: any) => b.weightedScore - a.weightedScore)
+                          .map((detail: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                                  <Type className="h-4 w-4 text-green-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium">{detail.label}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Value: {detail.value} | Weight: {detail.weight}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold">{detail.weightedScore.toFixed(2)}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {(detail.normalizedScore * 100).toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
+                    {/* Calculated Fields */}
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Function className="h-4 w-4" />
+                        Calculated Fields
+                      </h3>
+                      <div className="grid gap-3">
+                        {overallScore.details
+                          .filter((d: any) => debugInfo[d.field]?.type === "calculated")
+                          .sort((a: any, b: any) => b.weightedScore - a.weightedScore)
+                          .map((detail: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                                  <Function className="h-4 w-4 text-purple-600" />
+                                </div>
+                                <div>
+                                  <div className="font-medium">{detail.label}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Value: {typeof detail.value === 'number' ? detail.value.toFixed(2) : detail.value} | Weight: {detail.weight}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold">{detail.weightedScore.toFixed(2)}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {(detail.normalizedScore * 100).toFixed(1)}%
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      No field contribution data available
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="field-types" className="space-y-6">
+            {/* Field Types Explanation */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Understanding Field Types</CardTitle>
+                <CardDescription>
+                  How different field types are handled in the scoring system
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Numeric Fields */}
+                <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                  <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <Database className="h-5 w-5" />
+                    Numeric Fields
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Direct numerical inputs like age, income, and loan amounts. These are normalized 
+                    based on their ranges, optimal values, or specific field logic.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Examples:</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Age (years)</li>
+                        <li>• Annual Income ($)</li>
+                        <li>• Credit History Length (years)</li>
+                        <li>• Monthly Debt Payments ($)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Normalization:</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
+                        <li>• Range-based: (value-min)/(max-min)</li>
+                        <li>• Optimal-based: Distance from optimal</li>
+                        <li>• Custom logic per field type</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Categorical Fields */}
+                <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                  <h3 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                    <Type className="h-5 w-5" />
+                    Categorical Fields
+                  </h3>
+                  <p className="text-sm text-green-700 mb-3">
+                    String-based fields like employment status and education level. These are 
+                    normalized using predefined mappings that assign scores to each category.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Examples:</h4>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• Employment Status</li>
+                        <li>• Education Level</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Normalization:</h4>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• Employment: Employed=1.0, Unemployed=0.2</li>
+                        <li>• Education: PhD=1.0, High School=0.5</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculated Fields */}
+                <div className="p-4 border border-purple-200 rounded-lg bg-purple-50">
+                  <h3 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
+                    <Function className="h-5 w-5" />
+                    Calculated Fields
+                  </h3>
+                  <p className="text-sm text-purple-700 mb-3">
+                    Fields that are automatically calculated from base fields using formulas. 
+                    These provide insights like debt-to-income ratios and credit utilization.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Examples:</h4>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li>• Debt-to-Income Ratio</li>
+                        <li>• Credit Utilization</li>
+                        <li>• Monthly Income</li>
+                        <li>• Estimated Credit Score</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Calculation:</h4>
+                      <ul className="text-sm text-purple-700 space-y-1">
+                        <li>• DTI: (Monthly Debt × 12) ÷ Annual Income</li>
+                        <li>• Utilization: Credit Card Balances ÷ Credit Limit</li>
+                        <li>• Normalized using field-specific rules</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Field Type Impact */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Field Type Impact on Overall Score</CardTitle>
+                <CardDescription>
+                  How each field type contributes to the final weighted score
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {overallScore ? (
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {overallScore.details
+                            .filter((d: any) => debugInfo[d.field]?.type === "number")
+                            .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                            .toFixed(1)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Total Numeric Contribution</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-green-600">
+                          {overallScore.details
+                            .filter((d: any) => debugInfo[d.field]?.type === "string")
+                            .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                            .toFixed(1)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Total Categorical Contribution</div>
+                      </div>
+                      <div className="text-center p-4 border rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {overallScore.details
+                            .filter((d: any) => debugInfo[d.field]?.type === "calculated")
+                            .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                            .toFixed(1)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Total Calculated Contribution</div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium mb-2">Key Insights:</h4>
+                      <ul className="text-sm space-y-1">
+                        <li>• <strong>Numeric Fields</strong> provide the foundation with direct measurable data</li>
+                        <li>• <strong>Categorical Fields</strong> add context about employment and education stability</li>
+                        <li>• <strong>Calculated Fields</strong> provide critical ratios and derived insights</li>
+                        <li>• <strong>All field types</strong> are essential for comprehensive credit assessment</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      No impact analysis available
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="calculation" className="space-y-6">
+            {/* Calculation Process */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Overall Score Calculation Process
+                </CardTitle>
+                <CardDescription>
+                  Step-by-step process of how all field types are combined
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-lg font-bold mb-2">1</div>
+                    <h4 className="font-medium mb-2">Collect Data</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Gather all field values by type
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-lg font-bold mb-2">2</div>
+                    <h4 className="font-medium mb-2">Calculate Derived</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Compute calculated fields
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-lg font-bold mb-2">3</div>
+                    <h4 className="font-medium mb-2">Normalize All</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Convert to 0-1 scale by type
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg text-center">
+                    <div className="text-lg font-bold mb-2">4</div>
+                    <h4 className="font-medium mb-2">Weight & Sum</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Apply weights and total
+                    </p>
+                  </div>
+                </div>
+
+                {/* Detailed Process */}
+                <div className="space-y-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Step 1: Data Collection by Type</h4>
+                    <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-2">
+// Collect all field data
+const numericFields = { age: 35, income: 75000, ... }
+const categoricalFields = { employmentStatus: "Employed", educationLevel: "Bachelor", ... }
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      The system collects all field values, separating them by type for appropriate processing.
+                    </p>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Step 2: Derived Field Calculation</h4>
+                    <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-2">
+// Calculate derived fields
+const calculatedData = calculateAllFields(baseData)
+// Results: { debtToIncomeRatio: 0.19, creditUtilization: 0.3, ... }
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Calculated fields are computed using formulas that depend on base field values.
+                    </p>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Step 3: Type-Specific Normalization</h4>
+                    <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-2">
+// Normalize each field type appropriately
+numericFields.forEach(field => 
+  normalized = normalizeNumeric(value, field)
+)
+categoricalFields.forEach(field => 
+  normalized = normalizeCategorical(value, field)
+)
+calculatedFields.forEach(field => 
+  normalized = normalizeCalculated(value, field)
+)
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Each field type uses different normalization logic suited to its characteristics.
+                    </p>
+                  </div>
+
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium mb-2">Step 4: Weight Application and Aggregation</h4>
+                    <div className="bg-gray-50 p-3 rounded text-xs font-mono mb-2">
+// Apply weights and calculate final score
+allFields.forEach(field => {
+  contribution = normalizedScore * field.weight
+  totalScore += contribution
+  maxScore += field.weight
+})
+finalPercentage = (totalScore / maxScore) * 100
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      All normalized scores are multiplied by their weights and summed for the final score.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Normalization Examples */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Normalization Examples by Field Type</CardTitle>
+                <CardDescription>
+                  Real examples of how different field types are normalized
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 border border-blue-200 rounded-lg">
+                    <h4 className="font-medium mb-2">Numeric Field: Age</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium">Value: 35 years</div>
+                        <div className="text-sm text-muted-foreground">Weight: 8</div>
+                        <div className="text-sm text-muted-foreground">Optimal Range: 25-55</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Normalization: Perfect age</div>
+                        <div className="text-sm text-muted-foreground">Normalized Score: 1.0 (100%)</div>
+                        <div className="text-sm font-medium">Contribution: 8.0</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-green-200 rounded-lg">
+                    <h4 className="font-medium mb-2">Categorical Field: Employment Status</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium">Value: "Employed"</div>
+                        <div className="text-sm text-muted-foreground">Weight: 8</div>
+                        <div className="text-sm text-muted-foreground">Category: Best employment status</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Normalization: Employed mapping</div>
+                        <div className="text-sm text-muted-foreground">Normalized Score: 1.0 (100%)</div>
+                        <div className="text-sm font-medium">Contribution: 8.0</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 border border-purple-200 rounded-lg">
+                    <h4 className="font-medium mb-2">Calculated Field: Debt-to-Income Ratio</h4>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium">Value: 0.19 (19%)</div>
+                        <div className="text-sm text-muted-foreground">Weight: 10</div>
+                        <div className="text-sm text-muted-foreground">Calculated from: Monthly Debt ÷ Monthly Income</div>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">Normalization: Lower is better</div>
+                        <div className="text-sm text-muted-foreground">Normalized Score: 0.81 (81%)</div>
+                        <div className="text-sm font-medium">Contribution: 8.1</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="interactive" className="space-y-6">
+            {/* Interactive Demo */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Interactive Field Type Demo
+                </CardTitle>
+                <CardDescription>
+                  Modify different field types to see their impact on the overall score
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Field Controls */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Modify Field Values</h3>
+                    
+                    {/* Numeric Field */}
+                    <div className="p-3 border border-blue-200 rounded-lg">
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        Numeric Field
+                      </h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="age" className="text-sm">Age (years)</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          value={applicantData.age || ""}
+                          onChange={(e) => handleFieldChange("age", e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Categorical Field */}
+                    <div className="p-3 border border-green-200 rounded-lg">
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Type className="h-4 w-4" />
+                        Categorical Field
+                      </h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="employmentStatus" className="text-sm">Employment Status</Label>
+                        <Select 
+                          value={applicantData.employmentStatus || ""} 
+                          onValueChange={(value) => handleFieldChange("employmentStatus", value)}
+                        >
+                          <SelectTrigger className="text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Employed">Employed</SelectItem>
+                            <SelectItem value="Self-Employed">Self-Employed</SelectItem>
+                            <SelectItem value="Retired">Retired</SelectItem>
+                            <SelectItem value="Unemployed">Unemployed</SelectItem>
+                            <SelectItem value="Student">Student</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Numeric Field that affects calculated */}
+                    <div className="p-3 border border-blue-200 rounded-lg">
+                      <h4 className="font-medium mb-2 flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        Affects Calculated Fields
+                      </h4>
+                      <div className="space-y-2">
+                        <Label htmlFor="annualIncome" className="text-sm">Annual Income ($)</Label>
+                        <Input
+                          id="annualIncome"
+                          type="number"
+                          value={applicantData.annualIncome || ""}
+                          onChange={(e) => handleFieldChange("annualIncome", e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Live Results */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Live Score Impact</h3>
+                    {overallScore && (
+                      <div className="space-y-4">
+                        <div className="p-4 border rounded-lg">
+                          <div className="text-2xl font-bold mb-2">
+                            <span className={getScoreColor(overallScore.percentage)}>
+                              {overallScore.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                          <Progress value={overallScore.percentage} className="h-3" />
+                        </div>
+                        
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm">Field Type Contributions:</h4>
+                          
+                          <div className="p-2 bg-blue-50 rounded">
+                            <div className="flex justify-between text-sm">
+                              <span>Numeric Fields:</span>
+                              <span className="font-medium">
+                                {overallScore.details
+                                  .filter((d: any) => debugInfo[d.field]?.type === "number")
+                                  .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                                  .toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="p-2 bg-green-50 rounded">
+                            <div className="flex justify-between text-sm">
+                              <span>Categorical Fields:</span>
+                              <span className="font-medium">
+                                {overallScore.details
+                                  .filter((d: any) => debugInfo[d.field]?.type === "string")
+                                  .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                                  .toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="p-2 bg-purple-50 rounded">
+                            <div className="flex justify-between text-sm">
+                              <span>Calculated Fields:</span>
+                              <span className="font-medium">
+                                {overallScore.details
+                                  .filter((d: any) => debugInfo[d.field]?.type === "calculated")
+                                  .reduce((sum: number, d: any) => sum + d.weightedScore, 0)
+                                  .toFixed(1)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Key Takeaways */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Key Takeaways</CardTitle>
+                <CardDescription>
+                  Important insights about the comprehensive scoring system
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-2">🎯 Comprehensive Assessment</h4>
+                    <p className="text-sm text-blue-700">
+                      The scoring system now properly handles all three field types, providing a holistic 
+                      view of applicant creditworthiness through numeric data, categorical context, 
+                      and calculated insights.
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <h4 className="font-semibold text-green-800 mb-2">⚖️ Balanced Contributions</h4>
+                    <p className="text-sm text-green-700">
+                      Each field type contributes meaningfully to the overall score, with numeric fields 
+                      providing foundation, categorical fields adding stability context, and calculated 
+                      fields offering critical ratio analysis.
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <h4 className="font-semibold text-purple-800 mb-2">🔧 Type-Specific Logic</h4>
+                    <p className="text-sm text-purple-700">
+                      The normalization logic is tailored to each field type's characteristics, ensuring 
+                      that scores are calculated appropriately whether dealing with raw numbers, 
+                      categories, or derived values.
+                    </p>
+                  </div>
+                  
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <h4 className="font-semibold text-orange-800 mb-2">📊 Transparent Scoring</h4>
+                    <p className="text-sm text-orange-700">
+                      The system provides clear visibility into how each field type contributes to the 
+                      final score, making the credit assessment process transparent and understandable.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </MainLayout>
+  )
+}
